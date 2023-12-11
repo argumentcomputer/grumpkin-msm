@@ -1,0 +1,47 @@
+[package]
+name = "grumpkin-msm"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Optimized multiscalar multiplicaton for the Grumpkin curve cycle"
+repository = "https://github.com/lurk-lab/grumpkin-msm"
+readme = "README.md"
+include = [
+    "/benches/**",
+    "/cuda/**",
+    "/src/**",
+    "/Cargo.toml",
+    "/build.rs",
+    "/README.md",
+]
+
+[features]
+# By default, compile with ADX extension if the host supports it.
+# Binary can be executed on systems similar to the host.
+default = []
+# Compile in portable mode, without ISA extensions.
+# Binary can be executed on all systems.
+portable = [ "blst/portable" ]
+# Enable ADX even if the host CPU doesn't support it.
+# Binary can be executed on Broadwell+ and Ryzen+ systems.
+force-adx = [ "blst/force-adx" ]
+cuda-mobile = []
+
+[dependencies]
+blst = "~0.3.11"
+sppark = "~0.1.2"
+halo2curves = { version = "0.4.0" }
+
+[build-dependencies]
+cc = "^1.0.70"
+which = "^4.0"
+
+[dev-dependencies]
+criterion = { version = "0.3", features = [ "html_reports" ] }
+rand = "^0"
+rand_chacha = "^0"
+rayon = "1.5"
+
+[[bench]]
+name = "msm"
+harness = false
