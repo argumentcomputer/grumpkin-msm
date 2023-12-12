@@ -2,20 +2,11 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_mut)]
-
 use criterion::{criterion_group, criterion_main, Criterion};
-
-use grumpkin_msm;
+use grumpkin_msm::utils::{gen_points, gen_scalars};
 
 #[cfg(feature = "cuda")]
-extern "C" {
-    fn cuda_available() -> bool;
-}
-
-include!("../src/tests.rs");
+use grumpkin_msm::cuda_available;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let bench_npow: usize = std::env::var("BENCH_NPOW")
@@ -24,9 +15,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         .unwrap();
     let npoints: usize = 1 << bench_npow;
 
-    //println!("generating {} random points, just hang on...", npoints);
-    let mut points = crate::tests::gen_points(npoints);
-    let mut scalars = crate::tests::gen_scalars(npoints);
+    // println!("generating {} random points, just hang on...", npoints);
+    let points = gen_points(npoints);
+    let scalars = gen_scalars(npoints);
 
     #[cfg(feature = "cuda")]
     {
@@ -55,7 +46,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         while points.len() < npoints {
             points.append(&mut points.clone());
         }
-        scalars.append(&mut crate::tests::gen_scalars(npoints - scalars.len()));
+        scalars.append(&mut gen_scalars(npoints - scalars.len()));
 
         let mut group = c.benchmark_group("GPU");
         group.sample_size(20);
