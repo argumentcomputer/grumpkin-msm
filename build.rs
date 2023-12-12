@@ -18,7 +18,7 @@ fn main() {
     match (cfg!(feature = "portable"), cfg!(feature = "force-adx")) {
         (true, false) => {
             println!("Compiling in portable mode without ISA extensions");
-            cc_def = Some("__PASTA_PORTABLE__");
+            cc_def = Some("__BLST_PORTABLE__");
         }
         (false, true) => {
             if target_arch.eq("x86_64") {
@@ -57,7 +57,7 @@ fn main() {
     if let Some(include) = env::var_os("DEP_SPPARK_ROOT") {
         cc.include(include);
     }
-    cc.files(&files).compile("pasta_msm");
+    cc.files(&files).compile("grumpkin_msm");
 
     if cfg!(target_os = "windows") && !cfg!(target_env = "msvc") {
         return;
@@ -89,10 +89,10 @@ fn main() {
         }
         nvcc.clone()
             .file("cuda/bn254.cu")
-            .compile("pallas_msm_cuda");
+            .compile("bn256_msm_cuda");
         nvcc.define("__MSM_SORT_DONT_IMPLEMENT__", None)
             .file("cuda/grumpkin.cu")
-            .compile("vesta_msm_cuda");
+            .compile("grumpkin_msm_cuda");
 
         println!("cargo:rerun-if-changed=cuda");
         println!("cargo:rerun-if-env-changed=CXXFLAGS");
