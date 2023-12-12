@@ -15,6 +15,7 @@ extern "C" {
 pub static mut CUDA_OFF: bool = false;
 
 use halo2curves::bn256;
+use halo2curves::CurveExt;
 
 extern "C" {
     fn mult_pippenger_bn254(
@@ -53,7 +54,7 @@ pub fn bn256(points: &[bn256::G1Affine], scalars: &[bn256::Fr]) -> bn256::G1 {
     }
     let mut ret = bn256::G1::default();
     unsafe { mult_pippenger_bn254(&mut ret, &points[0], npoints, &scalars[0]) };
-    ret
+    bn256::G1::new_jacobian(ret.x, ret.y, ret.z).unwrap()
 }
 
 use halo2curves::grumpkin;
@@ -100,7 +101,7 @@ pub fn grumpkin(
     unsafe {
         mult_pippenger_grumpkin(&mut ret, &points[0], npoints, &scalars[0])
     };
-    ret
+    grumpkin::G1::new_jacobian(ret.x, ret.y, ret.z).unwrap()
 }
 
 include!("tests.rs");

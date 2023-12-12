@@ -1,12 +1,12 @@
 use core::cell::UnsafeCell;
 use core::mem::transmute;
 use core::sync::atomic::*;
-use rand::{RngCore, SeedableRng};
-use rand_chacha::ChaCha20Rng;
 use halo2curves::bn256;
 use halo2curves::ff::Field;
+use halo2curves::group::Curve;
 use halo2curves::CurveExt;
-use halo2curves::group::{Curve, Group};
+use rand::{RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 
 #[cfg(feature = "cuda")]
 extern "C" {
@@ -128,31 +128,22 @@ pub fn naive_multiscalar_mul(
 
 fn main() {
     let bench_npow: usize = std::env::var("BENCH_NPOW")
-        .unwrap_or("0".to_string())
+        .unwrap_or("10".to_string())
         .parse()
         .unwrap();
     let npoints: usize = 1 << bench_npow;
 
-    let two = bn256::G1::generator();
     // println!("generating {} random points, just hang on...", npoints);
-    // let points = gen_points(npoints);
-    let mut points: Vec<bn256::G1Affine> = Vec::with_capacity(npoints);
-    unsafe { points.set_len(npoints) };
-    bn256::G1::batch_normalize(&vec![two; npoints], &mut points);
-    let scalars = vec![bn256::Fr::from(2); npoints];
-
-    println!("points: {:?}", points);
-    println!("scalars: {:?}", scalars);
+    let points = gen_points(npoints);
+    let scalars = gen_scalars(npoints);
 
     #[cfg(feature = "cuda")]
-    {
-        unsafe { grumpkin_msm::CUDA_OFF = true };
+    if unsafe { cuda_available() } {
+        unsafe { grumpkin_msm::CUDA_OFF = false };
     }
 
     let res = grumpkin_msm::bn256(&points, &scalars).to_affine();
     let native = naive_multiscalar_mul(&points, &scalars);
-    let hi = (points[0] * scalars[0]).to_affine();
-    println!("hi: {:?}", hi);
     assert_eq!(res, native);
     println!("success!")
 }
