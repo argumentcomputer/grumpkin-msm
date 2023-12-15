@@ -16,8 +16,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     let npoints: usize = 1 << bench_npow;
 
     // println!("generating {} random points, just hang on...", npoints);
-    let points = gen_points(npoints);
-    let scalars = gen_scalars(npoints);
+    let mut points = gen_points(npoints);
+    let mut scalars = gen_scalars(npoints);
 
     #[cfg(feature = "cuda")]
     {

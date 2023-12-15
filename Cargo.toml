@@ -26,6 +26,9 @@ portable = [ "blst/portable" ]
 # Binary can be executed on Broadwell+ and Ryzen+ systems.
 force-adx = [ "blst/force-adx" ]
 cuda-mobile = []
+# Build with __MSM_SORT_DONT_IMPLEMENT__ to prevent redefining
+# symbols that breaks compilation during linking. 
+force-no-sort = []
 
 [dependencies]
 blst = "~0.3.11"

@@ -87,7 +87,12 @@ fn main() {
         if let Some(include) = env::var_os("DEP_SPPARK_ROOT") {
             nvcc.include(include);
         }
+        #[cfg(not(feature = "force-no-sort"))]
         nvcc.clone().file("cuda/bn254.cu").compile("bn256_msm_cuda");
+        #[cfg(feature = "force-no-sort")]
+        nvcc.clone()
+            .define("__MSM_SORT_DONT_IMPLEMENT__", None)
+            .file("cuda/bn254.cu").compile("bn256_msm_cuda");
         nvcc.define("__MSM_SORT_DONT_IMPLEMENT__", None)
             .file("cuda/grumpkin.cu")
             .compile("grumpkin_msm_cuda");

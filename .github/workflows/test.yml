@@ -40,3 +40,6 @@ jobs:
 
       - name: Run msm example
         run: cargo run --release --example msm
+
+      - name: Check benches build
+        run: cargo check --benches
