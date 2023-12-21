@@ -28,12 +28,12 @@ force-adx = [ "blst/force-adx" ]
 cuda-mobile = []
 # Build with __MSM_SORT_DONT_IMPLEMENT__ to prevent redefining
 # symbols that breaks compilation during linking. 
-force-no-sort = []
+dont-implement-sort = []
 
 [dependencies]
 blst = "~0.3.11"
 sppark = "~0.1.2"
-halo2curves = { version = "0.4.0" }
+halo2curves = { version = "0.5.0" }
 rand = "^0"
 rand_chacha = "^0"
 rayon = "1.5"
