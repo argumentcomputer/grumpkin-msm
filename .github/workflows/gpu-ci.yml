@@ -31,4 +31,4 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: CUDA tests
         run: |
-          cargo nextest run --release --features dont-implement-sort
+          cargo nextest run
