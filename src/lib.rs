@@ -4,6 +4,7 @@
 #![allow(improper_ctypes)]
 #![allow(unused)]
 
+pub mod pasta;
 pub mod utils;
 
 extern crate blst;
