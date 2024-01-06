@@ -48,5 +48,9 @@ which = "^4.0"
 criterion = { version = "0.3", features = [ "html_reports" ] }
 
 [[bench]]
-name = "msm"
+name = "grumpkin_msm"
+harness = false
+
+[[bench]]
+name = "pasta_msm"
 harness = false

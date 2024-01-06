@@ -26,9 +26,8 @@ pub fn pallas(
     scalars: &[pallas::Scalar],
 ) -> pallas::Point {
     let npoints = points.len();
-    if npoints != scalars.len() {
-        panic!("length mismatch")
-    }
+    assert_eq!(npoints, scalars.len(), "length mismatch");
+
     #[cfg(feature = "cuda")]
     if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
         extern "C" {
@@ -51,9 +50,8 @@ pub fn pallas(
                 true,
             )
         };
-        if err.code != 0 {
-            panic!("{}", String::from(err));
-        }
+        assert!(err.code == 0, "{}", String::from(err));
+
         return ret;
     }
     let mut ret = pallas::Point::default();
@@ -80,9 +78,8 @@ pub fn vesta(
     scalars: &[vesta::Scalar],
 ) -> vesta::Point {
     let npoints = points.len();
-    if npoints != scalars.len() {
-        panic!("length mismatch")
-    }
+    assert_eq!(npoints, scalars.len(), "length mismatch");
+
     #[cfg(feature = "cuda")]
     if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
         extern "C" {
@@ -105,9 +102,8 @@ pub fn vesta(
                 true,
             )
         };
-        if err.code != 0 {
-            panic!("{}", String::from(err));
-        }
+        assert!(err.code == 0, "{}", String::from(err));
+
         return ret;
     }
     let mut ret = vesta::Point::default();
@@ -117,12 +113,123 @@ pub fn vesta(
     ret
 }
 
+pub mod utils {
+    use std::{
+        mem::transmute,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc, Mutex,
+        },
+    };
+
+    use pasta_curves::{
+        arithmetic::CurveExt,
+        group::{ff::Field, Curve},
+        pallas,
+    };
+    use rand::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
+    use rayon::iter::{
+        IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator,
+    };
+
+    pub fn gen_points(npoints: usize) -> Vec<pallas::Affine> {
+        let ret = vec![pallas::Affine::default(); npoints];
+
+        let mut rnd = vec![0u8; 32 * npoints];
+        ChaCha20Rng::from_entropy().fill_bytes(&mut rnd);
+
+        let n_workers = rayon::current_num_threads();
+        let work = AtomicUsize::new(0);
+        rayon::scope(|s| {
+            for _ in 0..n_workers {
+                s.spawn(|_| {
+                    let hash = pallas::Point::hash_to_curve("foobar");
+
+                    let mut stride = 1024;
+                    let mut tmp = vec![pallas::Point::default(); stride];
+
+                    loop {
+                        let work = work.fetch_add(stride, Ordering::Relaxed);
+                        if work >= npoints {
+                            break;
+                        }
+                        if work + stride > npoints {
+                            stride = npoints - work;
+                            unsafe { tmp.set_len(stride) };
+                        }
+                        for (i, point) in
+                            tmp.iter_mut().enumerate().take(stride)
+                        {
+                            let off = (work + i) * 32;
+                            *point = hash(&rnd[off..off + 32]);
+                        }
+                        #[allow(mutable_transmutes)]
+                        pallas::Point::batch_normalize(&tmp, unsafe {
+                            transmute::<
+                                &[pallas::Affine],
+                                &mut [pallas::Affine],
+                            >(
+                                &ret[work..work + stride]
+                            )
+                        });
+                    }
+                })
+            }
+        });
+
+        ret
+    }
+
+    pub fn gen_scalars(npoints: usize) -> Vec<pallas::Scalar> {
+        let ret =
+            Arc::new(Mutex::new(vec![pallas::Scalar::default(); npoints]));
+
+        let n_workers = rayon::current_num_threads();
+        let work = Arc::new(AtomicUsize::new(0));
+
+        rayon::scope(|s| {
+            for _ in 0..n_workers {
+                let ret_clone = Arc::clone(&ret);
+                let work_clone = Arc::clone(&work);
+
+                s.spawn(move |_| {
+                    let mut rng = ChaCha20Rng::from_entropy();
+                    loop {
+                        let work = work_clone.fetch_add(1, Ordering::Relaxed);
+                        if work >= npoints {
+                            break;
+                        }
+                        let mut ret = ret_clone.lock().unwrap();
+                        ret[work] = pallas::Scalar::random(&mut rng);
+                    }
+                });
+            }
+        });
+
+        Arc::try_unwrap(ret).unwrap().into_inner().unwrap()
+    }
+
+    pub fn naive_multiscalar_mul(
+        points: &[pallas::Affine],
+        scalars: &[pallas::Scalar],
+    ) -> pallas::Affine {
+        let ret: pallas::Point = points
+            .par_iter()
+            .zip_eq(scalars.par_iter())
+            .map(|(p, s)| p * s)
+            .sum();
+
+        ret.to_affine()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use halo2curves::group::Curve;
+    use pasta_curves::group::Curve;
 
-    use crate::{
-        pasta::pallas,
+    use crate::pasta::{
+        pallas,
         utils::{gen_points, gen_scalars, naive_multiscalar_mul},
     };
 
@@ -136,8 +243,8 @@ mod tests {
         let points = gen_points(NPOINTS);
         let scalars = gen_scalars(NPOINTS);
 
-        // let naive = naive_multiscalar_mul(&points, &scalars);
-        // println!("{:?}", naive);
+        let naive = naive_multiscalar_mul(&points, &scalars);
+        println!("{:?}", naive);
 
         let ret = pallas(&points, &scalars).to_affine();
         println!("{:?}", ret);
