@@ -21,10 +21,10 @@ include = [
 default = []
 # Compile in portable mode, without ISA extensions.
 # Binary can be executed on all systems.
-portable = [ "blst/portable" ]
+portable = [ "blst/portable", "semolina/portable" ]
 # Enable ADX even if the host CPU doesn't support it.
 # Binary can be executed on Broadwell+ and Ryzen+ systems.
-force-adx = [ "blst/force-adx" ]
+force-adx = [ "blst/force-adx", "semolina/force-adx" ]
 cuda-mobile = []
 # Build with __MSM_SORT_DONT_IMPLEMENT__ to prevent redefining
 # symbols that breaks compilation during linking. 
@@ -32,8 +32,10 @@ dont-implement-sort = []
 
 [dependencies]
 blst = "~0.3.11"
+semolina = "~0.1.3"
 sppark = "~0.1.2"
 halo2curves = { version = "0.5.0" }
+pasta_curves = { git = "https://github.com/lurk-lab/pasta_curves", branch = "dev", version = ">=0.3.1, <=0.5", features = ["repr-c"] }
 rand = "^0"
 rand_chacha = "^0"
 rayon = "1.5"
@@ -46,5 +48,9 @@ which = "^4.0"
 criterion = { version = "0.3", features = [ "html_reports" ] }
 
 [[bench]]
-name = "msm"
+name = "grumpkin_msm"
+harness = false
+
+[[bench]]
+name = "pasta_msm"
 harness = false

@@ -1,6 +1,7 @@
 // Copyright Supranational LLC
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
+#![allow(unused_mut)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use grumpkin_msm::utils::{gen_points, gen_scalars};

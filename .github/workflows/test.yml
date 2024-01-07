@@ -38,8 +38,11 @@ jobs:
         with:
           command: test
 
-      - name: Run msm example
-        run: cargo run --release --example msm
+      - name: Run grumpkin_msm example
+        run: cargo run --release --example grumpkin_msm
+
+      - name: Run pasta_msm example
+        run: cargo run --release --example pasta_msm
 
       - name: Check benches build
         run: cargo check --benches
