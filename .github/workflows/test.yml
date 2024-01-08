@@ -39,29 +39,7 @@ jobs:
           cargo test --doc
 
   check-lurk-compiles:
-    if: github.event_name == 'pull_request'
-    runs-on: [ubuntu-latest]
-    env:
-      RUSTFLAGS: -D warnings
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        path: ${{ github.workspace }}/bellpepper
-    - uses: actions/checkout@v4
-      with:
-        repository: lurk-lab/lurk-rs
-        path: ${{ github.workspace }}/lurk
-        submodules: recursive
-    - uses: dtolnay/rust-toolchain@stable
-    - uses: Swatinem/rust-cache@v2
-    - name: Patch Cargo.toml
-      working-directory: ${{ github.workspace }}/lurk
-      run: |
-        echo "[patch.'https://github.com/lurk-lab/grumpkin-msm']" >> Cargo.toml
-        echo "grumpkin-msm = { path='../grumpkin-msm' }" >> Cargo.toml
-    - name: Check Lurk-rs types don't break spectacularly
-      working-directory: ${{ github.workspace }}/lurk
-      run: cargo check --all --tests --benches --examples
+    uses: lurk-lab/ci-workflows/.github/workflows/check-lurk-compiles.yml@main
 
   # Wasm build, rustfmt, clippy, doctests, and MSRV
   code-quality:
