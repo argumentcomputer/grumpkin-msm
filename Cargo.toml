@@ -26,9 +26,6 @@ portable = [ "blst/portable", "semolina/portable" ]
 # Binary can be executed on Broadwell+ and Ryzen+ systems.
 force-adx = [ "blst/force-adx", "semolina/force-adx" ]
 cuda-mobile = []
-# Build with __MSM_SORT_DONT_IMPLEMENT__ to prevent redefining
-# symbols that breaks compilation during linking. 
-dont-implement-sort = []
 
 [dependencies]
 blst = "~0.3.11"
