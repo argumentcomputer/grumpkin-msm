@@ -73,9 +73,10 @@ fn common_build_configurations(cc: &mut cc::Build) {
 }
 
 fn determine_cc_def(target_arch: &str, default_def: &str) -> Option<String> {
-    if cfg!(feature = "portable") && cfg!(feature = "force-adx") {
-        panic!("Cannot compile with both `portable` and `force-adx` features");
-    }
+    assert!(
+        !(cfg!(feature = "portable") && cfg!(feature = "force-adx")),
+        "Cannot compile with both `portable` and `force-adx` features"
+    );
 
     if cfg!(feature = "portable") {
         return Some(default_def.to_string());
