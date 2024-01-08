@@ -1,48 +1,99 @@
-name: Tests
-on: [push, pull_request]
-env:
-  CARGO_TERM_COLOR: always
+name: Rust
+
+on:
+  merge_group:
+  push:
+    branches: [dev, main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [dev, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest]
+    strategy:
+      fail-fast: false
+    env:
+      RUSTFLAGS: -D warnings
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Cache cargo build
-        uses: Swatinem/rust-cache@v1
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
         with:
-          toolchain: stable
-          override: true
-          profile: minimal
-          components: rustfmt, clippy
-          target: wasm32-unknown-unknown
+          repository: lurk-lab/ci-workflows
+      - uses: ./.github/actions/ci-env
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@nextest
+      - uses: Swatinem/rust-cache@v2
+      # make sure benches don't bit-rot
+      - name: build benches & examples
+        run: cargo build --benches --examples --release
+      - name: cargo test
+        run: |
+          cargo nextest run --release --profile ci
+      - name: Doctests
+        run: |
+          cargo test --doc
 
-      - name: Run cargo fmt
+  # Rustfmt, clippy, and doctests
+  lints:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lurk-lab/ci-workflows
+      - uses: ./.github/actions/ci-env
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Check Rustfmt Code Style
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
+      - name: Check clippy warnings
+        run: |
+          if $(cargo --list|grep -q xclippy); then 
+            cargo xclippy -Dwarnings
+          else 
+            cargo clippy -Dwarnings
+          fi
+      - name: Doctests
+        run: cargo test --doc --workspace
 
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
+  # Check MSRV in `Cargo.toml` is valid
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
-          command: clippy
-          args: --all-targets -- -D warnings
-
-      - name: Run tests
-        uses: actions-rs/cargo@v1
+          repository: lurk-lab/ci-workflows
+      - uses: ./.github/actions/ci-env
+      - uses: actions/checkout@v4
+      - name: Install rustup
+        uses: actions-rs/toolchain@v1
         with:
-          command: test
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv
+      - name: Check Rust MSRV
+        run: cargo msrv verify 
 
-      - name: Run grumpkin_msm example
-        run: cargo run --release --example grumpkin_msm
+  # Check documentation links aren't broken
+  link-checker:
+    uses: lurk-lab/ci-workflows/.github/workflows/links-check.yml@main
+    with: 
+      fail-fast: true
 
-      - name: Run pasta_msm example
-        run: cargo run --release --example pasta_msm
-
-      - name: Check benches build
-        run: cargo check --benches
+  # Lint dependencies for licensing and auditing issues as per https://github.com/lurk-lab/bellpepper/blob/main/deny.toml
+  licenses-audits:
+    uses: lurk-lab/ci-workflows/.github/workflows/licenses-audits.yml@main
