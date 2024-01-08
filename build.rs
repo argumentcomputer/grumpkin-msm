@@ -73,20 +73,26 @@ fn common_build_configurations(cc: &mut cc::Build) {
 }
 
 fn determine_cc_def(target_arch: &str, default_def: &str) -> Option<String> {
-    match (cfg!(feature = "portable"), cfg!(feature = "force-adx")) {
-        (true, false) => Some(default_def.to_string()),
-        (false, true) if target_arch == "x86_64" => Some("__ADX__".to_string()),
-        (false, false)
-            if target_arch == "x86_64"
-                && std::is_x86_feature_detected!("adx") =>
-        {
-            Some("__ADX__".to_string())
-        }
-        (true, true) => panic!(
-            "Cannot compile with both `portable` and `force-adx` features"
-        ),
-        _ => None,
+    if cfg!(feature = "portable") && cfg!(feature = "force-adx") {
+        panic!("Cannot compile with both `portable` and `force-adx` features");
     }
+
+    if cfg!(feature = "portable") {
+        return Some(default_def.to_string());
+    }
+
+    if cfg!(feature = "force-adx") && target_arch == "x86_64" {
+        return Some("__ADX__".to_string());
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if target_arch == "x86_64" && std::is_x86_feature_detected!("adx") {
+            return Some("__ADX__".to_string());
+        }
+    }
+
+    None
 }
 
 fn cuda_available() -> bool {
