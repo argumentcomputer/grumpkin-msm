@@ -58,6 +58,19 @@ fn criterion_benchmark(c: &mut Criterion) {
             })
         });
 
+        let context = grumpkin_msm::pasta::pallas_init(&points, npoints);
+
+        group.bench_function(
+            format!("preallocate 2**{} points", bench_npow),
+            |b| {
+                b.iter(|| {
+                    let _ = grumpkin_msm::pasta::pallas_with(
+                        &context, npoints, &scalars,
+                    );
+                })
+            },
+        );
+
         group.finish();
     }
 }

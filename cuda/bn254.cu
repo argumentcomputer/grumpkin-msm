@@ -17,9 +17,26 @@ typedef fr_t scalar_t;
 #include <msm/pippenger.cuh>
 
 #ifndef __CUDA_ARCH__
-extern "C" RustError cuda_pippenger_bn254(point_t *out, const affine_t points[], size_t npoints,
+
+extern "C" void drop_msm_context_bn254(msm_context_t<affine_t::mem_t> &ref) {
+    CUDA_OK(cudaFree(ref.d_points));
+}
+
+extern "C" RustError
+cuda_bn254_init(const affine_t points[], size_t npoints, msm_context_t<affine_t::mem_t> *msm_context)
+{
+    return mult_pippenger_init<bucket_t, point_t, affine_t, scalar_t>(points, npoints, msm_context);
+}
+
+extern "C" RustError cuda_bn254(point_t *out, const affine_t points[], size_t npoints,
                                           const scalar_t scalars[])
 {
     return mult_pippenger<bucket_t>(out, points, npoints, scalars);
+}
+
+extern "C" RustError cuda_bn254_with(point_t *out, msm_context_t<affine_t::mem_t> *msm_context, size_t npoints,
+                                                       const scalar_t scalars[])
+{
+    return mult_pippenger_with<bucket_t, point_t, affine_t, scalar_t>(out, msm_context, npoints, scalars);
 }
 #endif
