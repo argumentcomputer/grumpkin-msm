@@ -30,9 +30,20 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     group.bench_function(format!("2**{} points", bench_npow), |b| {
         b.iter(|| {
-            let _ = grumpkin_msm::pasta::pallas(&points, &scalars);
+            let _ = grumpkin_msm::pasta::pallas::msm(&points, &scalars);
         })
     });
+
+    let context = grumpkin_msm::pasta::pallas::init(points.clone());
+
+    group.bench_function(
+        format!("\"preallocate\" 2**{} points", bench_npow),
+        |b| {
+            b.iter(|| {
+                let _ = grumpkin_msm::pasta::pallas::with(&context, &scalars);
+            })
+        },
+    );
 
     group.finish();
 
@@ -54,19 +65,18 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         group.bench_function(format!("2**{} points", bench_npow), |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::pasta::pallas(&points, &scalars);
+                let _ = grumpkin_msm::pasta::pallas::msm(&points, &scalars);
             })
         });
 
-        let context = grumpkin_msm::pasta::pallas_init(&points, npoints);
+        let context = grumpkin_msm::pasta::pallas::init(points);
 
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),
             |b| {
                 b.iter(|| {
-                    let _ = grumpkin_msm::pasta::pallas_with(
-                        &context, npoints, &scalars,
-                    );
+                    let _ =
+                        grumpkin_msm::pasta::pallas::with(&context, &scalars);
                 })
             },
         );

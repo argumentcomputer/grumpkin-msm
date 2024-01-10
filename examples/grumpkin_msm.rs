@@ -20,7 +20,7 @@ fn main() {
         unsafe { grumpkin_msm::CUDA_OFF = false };
     }
 
-    let res = grumpkin_msm::bn256(&points, &scalars).to_affine();
+    let res = grumpkin_msm::bn256::msm(&points, &scalars).to_affine();
     let native = naive_multiscalar_mul(&points, &scalars);
     assert_eq!(res, native);
     println!("success!")

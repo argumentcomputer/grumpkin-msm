@@ -6,293 +6,223 @@
 
 extern crate semolina;
 
-use pasta_curves::pallas;
+pub mod pallas {
+    use pasta_curves::pallas::{Affine, Point, Scalar};
 
-#[cfg(feature = "cuda")]
-use crate::{cuda, cuda_available, CUDA_OFF};
+    use crate::impl_pasta;
 
-#[cfg(feature = "cuda")]
-#[repr(C)]
-#[derive(Debug, Clone)]
-pub struct MSMContextPallas {
-    context: *const std::ffi::c_void,
-}
-
-#[cfg(feature = "cuda")]
-unsafe impl Send for MSMContextPallas {}
-
-#[cfg(feature = "cuda")]
-unsafe impl Sync for MSMContextPallas {}
-
-#[cfg(feature = "cuda")]
-impl Default for MSMContextPallas {
-    fn default() -> Self {
-        Self {
-            context: std::ptr::null(),
-        }
-    }
-}
-
-#[cfg(feature = "cuda")]
-// TODO: check for device-side memory leaks
-impl Drop for MSMContextPallas {
-    fn drop(&mut self) {
-        extern "C" {
-            fn drop_msm_context_pallas(by_ref: &MSMContextPallas);
-        }
-        unsafe { drop_msm_context_pallas(std::mem::transmute::<&_, &_>(self)) };
-        self.context = core::ptr::null();
-    }
-}
-
-extern "C" {
-    fn mult_pippenger_pallas(
-        out: *mut pallas::Point,
-        points: *const pallas::Affine,
-        npoints: usize,
-        scalars: *const pallas::Scalar,
-        is_mont: bool,
+    impl_pasta!(
+        cuda_pallas,
+        cuda_pallas_init,
+        cuda_pallas_with,
+        mult_pippenger_pallas,
+        Point,
+        Affine,
+        Scalar
     );
 }
 
-pub fn pallas(
-    points: &[pallas::Affine],
-    scalars: &[pallas::Scalar],
-) -> pallas::Point {
-    let npoints = points.len();
-    assert_eq!(npoints, scalars.len(), "length mismatch");
+pub mod vesta {
+    use pasta_curves::vesta::{Affine, Point, Scalar};
 
-    #[cfg(feature = "cuda")]
-    if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
+    use crate::impl_pasta;
+
+    impl_pasta!(
+        cuda_vesta,
+        cuda_vesta_init,
+        cuda_vesta_with,
+        mult_pippenger_vesta,
+        Point,
+        Affine,
+        Scalar
+    );
+}
+
+#[macro_export]
+macro_rules! impl_pasta {
+    (
+        $name:ident,
+        $name_init:ident,
+        $name_with:ident,
+        $name_cpu:ident,
+        $point:ident,
+        $affine:ident,
+        $scalar:ident
+    ) => {
+        #[cfg(feature = "cuda")]
+        use $crate::{cuda, cuda_available, CUDA_OFF};
+
+        #[repr(C)]
+        #[derive(Debug, Clone)]
+        pub struct CudaMSMContext {
+            context: *const std::ffi::c_void,
+            npoints: usize,
+        }
+
+        unsafe impl Send for CudaMSMContext {}
+
+        unsafe impl Sync for CudaMSMContext {}
+
+        impl Default for CudaMSMContext {
+            fn default() -> Self {
+                Self {
+                    context: std::ptr::null(),
+                    npoints: 0,
+                }
+            }
+        }
+
+        #[cfg(feature = "cuda")]
+        // TODO: check for device-side memory leaks
+        impl Drop for CudaMSMContext {
+            fn drop(&mut self) {
+                extern "C" {
+                    fn drop_msm_context_bn254(by_ref: &CudaMSMContext);
+                }
+                unsafe {
+                    drop_msm_context_bn254(std::mem::transmute::<&_, &_>(self))
+                };
+                self.context = core::ptr::null();
+            }
+        }
+
+        #[derive(Debug, Clone)]
+        pub enum MSMContext {
+            CUDA(CudaMSMContext),
+            CPU(Vec<$affine>),
+        }
+
+        unsafe impl Send for MSMContext {}
+
+        unsafe impl Sync for MSMContext {}
+
+        impl MSMContext {
+            pub fn new_cpu(points: Vec<$affine>) -> Self {
+                Self::CPU(points)
+            }
+
+            pub fn new_cuda(cuda_context: CudaMSMContext) -> Self {
+                Self::CUDA(cuda_context)
+            }
+
+            pub fn npoints(&self) -> usize {
+                match self {
+                    Self::CUDA(cuda_context) => cuda_context.npoints,
+                    Self::CPU(points) => points.len(),
+                }
+            }
+
+            pub fn cuda(&self) -> &CudaMSMContext {
+                match self {
+                    Self::CUDA(cuda_context) => cuda_context,
+                    Self::CPU(_) => panic!("not a cuda context"),
+                }
+            }
+
+            pub fn points(&self) -> &Vec<$affine> {
+                match self {
+                    Self::CUDA(_) => {
+                        panic!("cuda context; no host side points")
+                    }
+                    Self::CPU(points) => points,
+                }
+            }
+        }
+
         extern "C" {
-            fn cuda_pallas(
-                out: *mut pallas::Point,
-                points: *const pallas::Affine,
+            fn $name_cpu(
+                out: *mut $point,
+                points: *const $affine,
                 npoints: usize,
-                scalars: *const pallas::Scalar,
-                is_mont: bool,
-            ) -> cuda::Error;
+                scalars: *const $scalar,
+            );
 
         }
-        let mut ret = pallas::Point::default();
-        let err = unsafe {
-            cuda_pallas(&mut ret, &points[0], npoints, &scalars[0], true)
-        };
-        assert!(err.code == 0, "{}", String::from(err));
 
-        return ret;
-    }
-    let mut ret = pallas::Point::default();
-    unsafe {
-        mult_pippenger_pallas(&mut ret, &points[0], npoints, &scalars[0], true)
-    };
-    ret
-}
+        pub fn msm(points: &[$affine], scalars: &[$scalar]) -> $point {
+            let npoints = points.len();
+            assert!(npoints == scalars.len(), "length mismatch");
 
-#[cfg(feature = "cuda")]
-pub fn pallas_init(
-    points: &[pallas::Affine],
-    npoints: usize,
-) -> MSMContextPallas {
-    unsafe {
-        assert!(
-            !CUDA_OFF && cuda_available(),
-            "feature = \"cuda\" must be enabled"
-        )
-    };
-    assert!(
-        npoints == points.len() && npoints >= 1 << 16,
-        "length mismatch or less than 10**16"
-    );
+            #[cfg(feature = "cuda")]
+            if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
+                extern "C" {
+                    fn $name(
+                        out: *mut $point,
+                        points: *const $affine,
+                        npoints: usize,
+                        scalars: *const $scalar,
+                    ) -> cuda::Error;
 
-    extern "C" {
-        fn cuda_pallas_init(
-            points: *const pallas::Affine,
-            npoints: usize,
-            msm_context: &mut MSMContextPallas,
-        ) -> cuda::Error;
+                }
+                let mut ret = $point::default();
+                let err = unsafe {
+                    $name(&mut ret, &points[0], npoints, &scalars[0])
+                };
+                assert!(err.code == 0, "{}", String::from(err));
 
-    }
-
-    let mut ret = MSMContextPallas::default();
-    let err = unsafe {
-        cuda_pallas_init(points.as_ptr() as *const _, npoints, &mut ret)
-    };
-    assert!(err.code == 0, "{}", String::from(err));
-
-    ret
-}
-
-#[cfg(feature = "cuda")]
-pub fn pallas_with(
-    context: &MSMContextPallas,
-    npoints: usize,
-    scalars: &[pallas::Scalar],
-) -> pallas::Point {
-    unsafe {
-        assert!(
-            !CUDA_OFF && cuda_available(),
-            "feature = \"cuda\" must be enabled"
-        )
-    };
-    assert!(
-        npoints == scalars.len() && npoints >= 1 << 16,
-        "length mismatch or less than 10**16"
-    );
-
-    extern "C" {
-        fn cuda_pallas_with(
-            out: *mut pallas::Point,
-            context: &MSMContextPallas,
-            npoints: usize,
-            scalars: *const pallas::Scalar,
-            is_mont: bool,
-        ) -> cuda::Error;
-
-    }
-
-    let mut ret = pallas::Point::default();
-    let err = unsafe {
-        cuda_pallas_with(&mut ret, context, npoints, &scalars[0], true)
-    };
-    assert!(err.code == 0, "{}", String::from(err));
-
-    ret
-}
-
-use pasta_curves::vesta;
-
-#[cfg(feature = "cuda")]
-#[repr(C)]
-#[derive(Debug, Clone)]
-pub struct MSMContextVesta {
-    context: *const std::ffi::c_void,
-}
-
-#[cfg(feature = "cuda")]
-unsafe impl Send for MSMContextVesta {}
-
-#[cfg(feature = "cuda")]
-unsafe impl Sync for MSMContextVesta {}
-
-#[cfg(feature = "cuda")]
-impl Default for MSMContextVesta {
-    fn default() -> Self {
-        Self {
-            context: std::ptr::null(),
+                return ret;
+            }
+            let mut ret = $point::default();
+            unsafe { $name_cpu(&mut ret, &points[0], npoints, &scalars[0]) };
+            ret
         }
-    }
-}
 
-extern "C" {
-    fn mult_pippenger_vesta(
-        out: *mut vesta::Point,
-        points: *const vesta::Affine,
-        npoints: usize,
-        scalars: *const vesta::Scalar,
-        is_mont: bool,
-    );
-}
+        pub fn init(points: Vec<$affine>) -> MSMContext {
+            #[cfg(feature = "cuda")]
+            if unsafe { !CUDA_OFF && cuda_available() } {
+                extern "C" {
+                    fn $name_init(
+                        points: *const $affine,
+                        npoints: usize,
+                        msm_context: &mut CudaMSMContext,
+                    ) -> cuda::Error;
+                }
 
-pub fn vesta(
-    points: &[vesta::Affine],
-    scalars: &[vesta::Scalar],
-) -> vesta::Point {
-    let npoints = points.len();
-    assert_eq!(npoints, scalars.len(), "length mismatch");
+                let mut ret = CudaMSMContext::default();
 
-    #[cfg(feature = "cuda")]
-    if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
-        extern "C" {
-            fn cuda_vesta(
-                out: *mut vesta::Point,
-                points: *const vesta::Affine,
-                npoints: usize,
-                scalars: *const vesta::Scalar,
-                is_mont: bool,
-            ) -> cuda::Error;
+                let npoints = points.len();
+                let err = unsafe {
+                    $name_init(points.as_ptr() as *const _, npoints, &mut ret)
+                };
+                assert!(err.code == 0, "{}", String::from(err));
+                return MSMContext::new_cuda(ret);
+            }
 
+            MSMContext::new_cpu(points)
         }
-        let mut ret = vesta::Point::default();
-        let err = unsafe {
-            cuda_vesta(&mut ret, &points[0], npoints, &scalars[0], true)
-        };
-        assert!(err.code == 0, "{}", String::from(err));
 
-        return ret;
-    }
-    let mut ret = vesta::Point::default();
-    unsafe {
-        mult_pippenger_vesta(&mut ret, &points[0], npoints, &scalars[0], true)
+        pub fn with(context: &MSMContext, scalars: &[$scalar]) -> $point {
+            assert!(context.npoints() >= scalars.len(), "not enough points");
+
+            let mut ret = $point::default();
+
+            #[cfg(feature = "cuda")]
+            if unsafe { !CUDA_OFF && cuda_available() } {
+                extern "C" {
+                    fn $name_with(
+                        out: *mut $point,
+                        context: &CudaMSMContext,
+                        scalars: *const $scalar,
+                    ) -> cuda::Error;
+                }
+
+                let err = unsafe { $name_with(&mut ret, context.cuda(), &scalars[0]) };
+                assert!(err.code == 0, "{}", String::from(err));
+                return ret;
+            }
+
+            unsafe {
+                $name_cpu(
+                    &mut ret,
+                    &context.points()[0],
+                    context.npoints(),
+                    &scalars[0],
+                )
+            };
+
+            ret
+        }
     };
-    ret
-}
-
-#[cfg(feature = "cuda")]
-pub fn vesta_init(points: &[vesta::Affine], npoints: usize) -> MSMContextVesta {
-    unsafe {
-        assert!(
-            !CUDA_OFF && cuda_available(),
-            "feature = \"cuda\" must be enabled"
-        )
-    };
-    assert!(
-        npoints == points.len() && npoints >= 1 << 16,
-        "length mismatch or less than 10**16"
-    );
-    extern "C" {
-        fn cuda_vesta_init(
-            points: *const vesta::Affine,
-            npoints: usize,
-            msm_context: &mut MSMContextVesta,
-        ) -> cuda::Error;
-
-    }
-
-    let mut ret = MSMContextVesta::default();
-    let err = unsafe {
-        cuda_vesta_init(points.as_ptr() as *const _, npoints, &mut ret)
-    };
-    assert!(err.code == 0, "{}", String::from(err));
-
-    ret
-}
-
-#[cfg(feature = "cuda")]
-pub fn vesta_with(
-    context: &MSMContextVesta,
-    npoints: usize,
-    scalars: &[vesta::Scalar],
-) -> vesta::Point {
-    unsafe {
-        assert!(
-            !CUDA_OFF && cuda_available(),
-            "feature = \"cuda\" must be enabled"
-        )
-    };
-    assert!(
-        npoints == scalars.len() && npoints >= 1 << 16,
-        "length mismatch or less than 10**16"
-    );
-
-    extern "C" {
-        fn cuda_vesta_with(
-            out: *mut vesta::Point,
-            context: &MSMContextVesta,
-            npoints: usize,
-            scalars: *const vesta::Scalar,
-            is_mont: bool,
-        ) -> cuda::Error;
-
-    }
-
-    let mut ret = vesta::Point::default();
-    let err = unsafe {
-        cuda_vesta_with(&mut ret, context, npoints, &scalars[0], true)
-    };
-    assert!(err.code == 0, "{}", String::from(err));
-
-    ret
 }
 
 pub mod utils {
@@ -428,7 +358,7 @@ mod tests {
         let naive = naive_multiscalar_mul(&points, &scalars);
         println!("{:?}", naive);
 
-        let ret = pallas(&points, &scalars).to_affine();
+        let ret = pallas::msm(&points, &scalars).to_affine();
         println!("{:?}", ret);
 
         assert_eq!(ret, naive);

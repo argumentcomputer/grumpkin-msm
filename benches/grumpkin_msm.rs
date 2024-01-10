@@ -30,9 +30,20 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     group.bench_function(format!("2**{} points", bench_npow), |b| {
         b.iter(|| {
-            let _ = grumpkin_msm::bn256(&points, &scalars);
+            let _ = grumpkin_msm::bn256::msm(&points, &scalars);
         })
     });
+
+    let context = grumpkin_msm::bn256::init(points.clone());
+
+    group.bench_function(
+        format!("\"preallocate\" 2**{} points", bench_npow),
+        |b| {
+            b.iter(|| {
+                let _ = grumpkin_msm::bn256::with(&context, &scalars);
+            })
+        },
+    );
 
     group.finish();
 
@@ -54,18 +65,18 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         group.bench_function(format!("2**{} points", bench_npow), |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::bn256(&points, &scalars);
+                let _ = grumpkin_msm::bn256::msm(&points, &scalars);
             })
         });
 
-        let context = grumpkin_msm::bn256_init(&points, npoints);
+        let context = grumpkin_msm::bn256::init(points);
 
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),
             |b| {
                 b.iter(|| {
                     let _ =
-                        grumpkin_msm::bn256_with(&context, npoints, &scalars);
+                        grumpkin_msm::bn256::with(&context, &scalars);
                 })
             },
         );

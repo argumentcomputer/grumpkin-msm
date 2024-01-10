@@ -8,7 +8,7 @@ use pasta_curves::group::Curve;
 
 fn main() {
     let bench_npow: usize = std::env::var("BENCH_NPOW")
-        .unwrap_or("17".to_string())
+        .unwrap_or("22".to_string())
         .parse()
         .unwrap();
     let npoints: usize = 1 << bench_npow;
@@ -22,8 +22,10 @@ fn main() {
         unsafe { grumpkin_msm::CUDA_OFF = false };
     }
 
-    let res = grumpkin_msm::pasta::pallas(&points, &scalars).to_affine();
     let native = naive_multiscalar_mul(&points, &scalars);
+    let context = grumpkin_msm::pasta::pallas::init(points);
+    let res = grumpkin_msm::pasta::pallas::with(&context, &scalars).to_affine();
+
     assert_eq!(res, native);
     println!("success!")
 }
