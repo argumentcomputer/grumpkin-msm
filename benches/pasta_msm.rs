@@ -34,7 +34,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
-    let context = grumpkin_msm::pasta::pallas::init(points.clone());
+    let context = grumpkin_msm::pasta::pallas::init(&points);
 
     group.bench_function(
         format!("\"preallocate\" 2**{} points", bench_npow),
@@ -69,7 +69,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             })
         });
 
-        let context = grumpkin_msm::pasta::pallas::init(points);
+        let context = grumpkin_msm::pasta::pallas::init(&points);
 
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),

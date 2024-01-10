@@ -23,7 +23,7 @@ fn main() {
     }
 
     let native = naive_multiscalar_mul(&points, &scalars);
-    let context = grumpkin_msm::pasta::pallas::init(points);
+    let context = grumpkin_msm::pasta::pallas::init(&points);
     let res = grumpkin_msm::pasta::pallas::with(&context, &scalars).to_affine();
 
     assert_eq!(res, native);

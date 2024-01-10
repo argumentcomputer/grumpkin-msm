@@ -105,17 +105,17 @@ macro_rules! impl_msm {
         }
 
         #[derive(Debug, Clone)]
-        pub enum MSMContext {
+        pub enum MSMContext<'a> {
             CUDA(CudaMSMContext),
-            CPU(Vec<$affine>),
+            CPU(&'a [$affine]),
         }
 
-        unsafe impl Send for MSMContext {}
+        unsafe impl<'a> Send for MSMContext<'a> {}
 
-        unsafe impl Sync for MSMContext {}
+        unsafe impl<'a> Sync for MSMContext<'a> {}
 
-        impl MSMContext {
-            pub fn new_cpu(points: Vec<$affine>) -> Self {
+        impl<'a> MSMContext<'a> {
+            pub fn new_cpu(points: &'a [$affine]) -> Self {
                 Self::CPU(points)
             }
 
@@ -137,7 +137,7 @@ macro_rules! impl_msm {
                 }
             }
 
-            pub fn points(&self) -> &Vec<$affine> {
+            pub fn points(&self) -> &[$affine] {
                 match self {
                     Self::CUDA(_) => {
                         panic!("cuda context; no host side points")
@@ -184,7 +184,7 @@ macro_rules! impl_msm {
             $point::new_jacobian(ret.x, ret.y, ret.z).unwrap()
         }
         
-        pub fn init(points: Vec<$affine>) -> MSMContext {
+        pub fn init(points: &[$affine]) -> MSMContext {
             #[cfg(feature = "cuda")]
             if unsafe { !CUDA_OFF && cuda_available() } {
                 extern "C" {
