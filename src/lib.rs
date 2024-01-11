@@ -104,10 +104,12 @@ macro_rules! impl_msm {
             }
         }
 
-        #[derive(Debug, Clone)]
+        #[derive(Default, Debug, Clone)]
         pub enum MSMContext<'a> {
             CUDA(CudaMSMContext),
             CPU(&'a [$affine]),
+            #[default]
+            Uninit,
         }
 
         unsafe impl<'a> Send for MSMContext<'a> {}
@@ -127,6 +129,7 @@ macro_rules! impl_msm {
                 match self {
                     Self::CUDA(cuda_context) => cuda_context.npoints,
                     Self::CPU(points) => points.len(),
+                    Self::Uninit => panic!("not initialized"),
                 }
             }
 
@@ -134,6 +137,7 @@ macro_rules! impl_msm {
                 match self {
                     Self::CUDA(cuda_context) => cuda_context,
                     Self::CPU(_) => panic!("not a cuda context"),
+                    Self::Uninit => panic!("not initialized"),
                 }
             }
 
@@ -143,6 +147,7 @@ macro_rules! impl_msm {
                         panic!("cuda context; no host side points")
                     }
                     Self::CPU(points) => points,
+                    Self::Uninit => panic!("not initialized"),
                 }
             }
         }
