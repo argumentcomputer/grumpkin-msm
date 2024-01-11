@@ -87,11 +87,10 @@ macro_rules! impl_pasta {
         }
 
         #[derive(Default, Debug, Clone)]
-        pub enum MSMContext<'a> {
-            CUDA(CudaMSMContext),
-            CPU(&'a [$affine]),
-            #[default]
-            Uninit,
+        pub struct MSMContext<'a> {
+            cuda_context: CudaMSMContext,
+            on_gpu: bool,
+            cpu_context: &'a [$affine],
         }
 
         unsafe impl<'a> Send for MSMContext<'a> {}
@@ -99,38 +98,30 @@ macro_rules! impl_pasta {
         unsafe impl<'a> Sync for MSMContext<'a> {}
 
         impl<'a> MSMContext<'a> {
-            pub fn new_cpu(points: &'a [$affine]) -> Self {
-                Self::CPU(points)
-            }
-
-            pub fn new_cuda(cuda_context: CudaMSMContext) -> Self {
-                Self::CUDA(cuda_context)
-            }
-
-            pub fn npoints(&self) -> usize {
-                match self {
-                    Self::CUDA(cuda_context) => cuda_context.npoints,
-                    Self::CPU(points) => points.len(),
-                    Self::Uninit => panic!("not initialized"),
+            fn new(points: &'a [$affine]) -> Self {
+                Self {
+                    cuda_context: CudaMSMContext::default(),
+                    on_gpu: false,
+                    cpu_context: points,
                 }
             }
 
-            pub fn cuda(&self) -> &CudaMSMContext {
-                match self {
-                    Self::CUDA(cuda_context) => cuda_context,
-                    Self::CPU(_) => panic!("not a cuda context"),
-                    Self::Uninit => panic!("not initialized"),
+            fn npoints(&self) -> usize {
+                if self.on_gpu {
+                    assert_eq!(
+                        self.cpu_context.len(),
+                        self.cuda_context.npoints
+                    );
                 }
+                self.cpu_context.len()
             }
 
-            pub fn points(&self) -> &[$affine] {
-                match self {
-                    Self::CUDA(_) => {
-                        panic!("cuda context; no host side points")
-                    }
-                    Self::CPU(points) => points,
-                    Self::Uninit => panic!("not initialized"),
-                }
+            fn cuda(&self) -> &CudaMSMContext {
+                &self.cuda_context
+            }
+
+            fn points(&self) -> &[$affine] {
+                &self.cpu_context
             }
         }
 
@@ -140,6 +131,7 @@ macro_rules! impl_pasta {
                 points: *const $affine,
                 npoints: usize,
                 scalars: *const $scalar,
+                is_mont: bool,
             );
 
         }
@@ -156,25 +148,32 @@ macro_rules! impl_pasta {
                         points: *const $affine,
                         npoints: usize,
                         scalars: *const $scalar,
+                        is_mont: bool,
                     ) -> cuda::Error;
 
                 }
                 let mut ret = $point::default();
                 let err = unsafe {
-                    $name(&mut ret, &points[0], npoints, &scalars[0])
+                    $name(&mut ret, &points[0], npoints, &scalars[0], true)
                 };
                 assert!(err.code == 0, "{}", String::from(err));
 
                 return ret;
             }
             let mut ret = $point::default();
-            unsafe { $name_cpu(&mut ret, &points[0], npoints, &scalars[0]) };
+            unsafe {
+                $name_cpu(&mut ret, &points[0], npoints, &scalars[0], true)
+            };
             ret
         }
 
         pub fn init(points: &[$affine]) -> MSMContext {
+            let npoints = points.len();
+
+            let mut ret = MSMContext::new(points);
+
             #[cfg(feature = "cuda")]
-            if unsafe { !CUDA_OFF && cuda_available() } {
+            if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
                 extern "C" {
                     fn $name_init(
                         points: *const $affine,
@@ -183,35 +182,46 @@ macro_rules! impl_pasta {
                     ) -> cuda::Error;
                 }
 
-                let mut ret = CudaMSMContext::default();
-
                 let npoints = points.len();
                 let err = unsafe {
-                    $name_init(points.as_ptr() as *const _, npoints, &mut ret)
+                    $name_init(
+                        points.as_ptr() as *const _,
+                        npoints,
+                        &mut ret.cuda_context,
+                    )
                 };
                 assert!(err.code == 0, "{}", String::from(err));
-                return MSMContext::new_cuda(ret);
+                ret.on_gpu = true;
+                return ret;
             }
 
-            MSMContext::new_cpu(points)
+            ret
         }
 
         pub fn with(context: &MSMContext, scalars: &[$scalar]) -> $point {
-            assert!(context.npoints() >= scalars.len(), "not enough points");
+            let npoints = context.npoints();
+            let nscalars = scalars.len();
+            assert!(npoints >= nscalars, "not enough points");
 
             let mut ret = $point::default();
 
             #[cfg(feature = "cuda")]
-            if unsafe { !CUDA_OFF && cuda_available() } {
+            if nscalars >= 1 << 16
+                && unsafe { !CUDA_OFF && cuda_available() }
+            {
                 extern "C" {
                     fn $name_with(
                         out: *mut $point,
                         context: &CudaMSMContext,
+                        npoints: usize,
                         scalars: *const $scalar,
+                        is_mont: bool,
                     ) -> cuda::Error;
                 }
 
-                let err = unsafe { $name_with(&mut ret, context.cuda(), &scalars[0]) };
+                let err = unsafe {
+                    $name_with(&mut ret, context.cuda(), nscalars, &scalars[0], true)
+                };
                 assert!(err.code == 0, "{}", String::from(err));
                 return ret;
             }
@@ -219,9 +229,10 @@ macro_rules! impl_pasta {
             unsafe {
                 $name_cpu(
                     &mut ret,
-                    &context.points()[0],
-                    context.npoints(),
+                    &context.cpu_context[0],
+                    nscalars,
                     &scalars[0],
+                    true,
                 )
             };
 
@@ -366,6 +377,11 @@ mod tests {
         let ret = pallas::msm(&points, &scalars).to_affine();
         println!("{:?}", ret);
 
+        let context = pallas::init(&points);
+        let ret_other = pallas::with(&context, &scalars).to_affine();
+        println!("{:?}", ret_other);
+
         assert_eq!(ret, naive);
+        assert_eq!(ret, ret_other);
     }
 }
