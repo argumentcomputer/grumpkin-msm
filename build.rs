@@ -33,9 +33,9 @@ fn main() {
         println!("cargo:rerun-if-env-changed=CXXFLAGS");
         println!("cargo:rustc-cfg=feature=\"cuda\"");
     } else {
-        println!("warning=feature \"cuda\" was enabled but no valid installation of CUDA was found");
-        println!("warning=the crate's default CPU methods will be compiled instead; NO GPU IMPLEMENTATION WILL USED WHEN CALLING THIS CRATE'S METHODS");
-        println!("warning=please recompile without feature \"cuda\" or provide a valid CUDA configuration");
+        println!("cargo:warning=feature \"cuda\" was enabled but no valid installation of CUDA was found");
+        println!("cargo:warning=the crate's default CPU methods will be compiled instead; NO GPU IMPLEMENTATION WILL BE USED WHEN CALLING THIS CRATE'S METHODS");
+        println!("cargo:warning=please recompile without feature \"cuda\" or provide a valid CUDA installation");
     }
     println!("cargo:rerun-if-env-changed=NVCC");
 }
@@ -103,6 +103,7 @@ fn determine_cc_def(target_arch: &str, default_def: &str) -> Option<String> {
     None
 }
 
+#[cfg(feature = "cuda")]
 fn cuda_available() -> bool {
     match env::var("NVCC") {
         Ok(var) => which::which(var).is_ok(),
@@ -110,6 +111,7 @@ fn cuda_available() -> bool {
     }
 }
 
+#[cfg(feature = "cuda")]
 fn compile_cuda(file_name: &str, output_name: &str, implement_sort: bool) {
     let mut nvcc = cc::Build::new();
     nvcc.cuda(true);
