@@ -21,6 +21,7 @@ fn main() {
         return;
     }
 
+    #[cfg(feature = "cuda")]
     if cuda_available() {
         let mut implement_sort: bool = true;
         compile_cuda("cuda/bn254.cu", "bn256_msm_cuda", implement_sort);
@@ -30,8 +31,11 @@ fn main() {
         compile_cuda("cuda/vesta.cu", "vesta_msm_cuda", implement_sort);
         println!("cargo:rerun-if-changed=cuda");
         println!("cargo:rerun-if-env-changed=CXXFLAGS");
-        #[cfg(feature = "cuda")]
         println!("cargo:rustc-cfg=feature=\"cuda\"");
+    } else {
+        println!("warning=feature \"cuda\" was enabled but no valid installation of CUDA was found");
+        println!("warning=the crate's default CPU methods will be compiled instead; NO GPU IMPLEMENTATION WILL USED WHEN CALLING THIS CRATE'S METHODS");
+        println!("warning=please recompile without feature \"cuda\" or provide a valid CUDA configuration");
     }
     println!("cargo:rerun-if-env-changed=NVCC");
 }
