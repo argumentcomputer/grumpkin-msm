@@ -167,7 +167,7 @@ macro_rules! impl_pasta {
             ret
         }
 
-        pub fn init(points: &[$affine]) -> MSMContext {
+        pub fn init(points: &[$affine]) -> MSMContext<'_> {
             let npoints = points.len();
 
             let mut ret = MSMContext::new(points);
@@ -198,7 +198,7 @@ macro_rules! impl_pasta {
             ret
         }
 
-        pub fn with(context: &MSMContext, scalars: &[$scalar]) -> $point {
+        pub fn with(context: &MSMContext<'_>, scalars: &[$scalar]) -> $point {
             let npoints = context.npoints();
             let nscalars = scalars.len();
             assert!(npoints >= nscalars, "not enough points");

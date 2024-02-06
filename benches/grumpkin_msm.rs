@@ -40,7 +40,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         format!("\"preallocate\" 2**{} points", bench_npow),
         |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::bn256::with(&context, &scalars);
+                let _ = grumpkin_msm::bn256::with(&context, &scalars, None);
             })
         },
     );

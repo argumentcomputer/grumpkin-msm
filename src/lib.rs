@@ -181,7 +181,7 @@ macro_rules! impl_msm {
             $point::new_jacobian(ret.x, ret.y, ret.z).unwrap()
         }
 
-        pub fn init(points: &[$affine]) -> MSMContext {
+        pub fn init(points: &[$affine]) -> MSMContext<'_> {
             let npoints = points.len();
 
             let mut ret = MSMContext::new(points);
@@ -212,7 +212,11 @@ macro_rules! impl_msm {
             ret
         }
 
-        pub fn with(context: &MSMContext, scalars: &[$scalar]) -> $point {
+        pub fn with(
+            context: &MSMContext<'_>,
+            scalars: &[$scalar],
+            indices: Option<&[u32]>,
+        ) -> $point {
             let npoints = context.npoints();
             let nscalars = scalars.len();
             assert!(npoints >= nscalars, "not enough points");
@@ -230,11 +234,23 @@ macro_rules! impl_msm {
                         context: &CudaMSMContext,
                         npoints: usize,
                         scalars: *const $scalar,
+                        indices: *const u32,
                     ) -> cuda::Error;
                 }
 
+                let indices = if let Some(inner) = indices {
+                    inner.as_ptr()
+                } else {
+                    std::ptr::null()
+                };
                 let err = unsafe {
-                    $name_with(&mut ret, &context.cuda_context, nscalars, &scalars[0])
+                    $name_with(
+                        &mut ret,
+                        &context.cuda_context,
+                        nscalars,
+                        &scalars[0],
+                        indices,
+                    )
                 };
                 assert!(err.code == 0, "{}", String::from(err));
                 return $point::new_jacobian(ret.x, ret.y, ret.z).unwrap();
@@ -276,7 +292,8 @@ mod tests {
         println!("{:?}", ret);
 
         let context = crate::bn256::init(&points);
-        let ret_other = crate::bn256::with(&context, &scalars).to_affine();
+        let ret_other =
+            crate::bn256::with(&context, &scalars, None).to_affine();
         println!("{:?}", ret_other);
 
         assert_eq!(ret, naive);

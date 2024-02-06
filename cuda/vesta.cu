@@ -18,7 +18,8 @@ typedef pallas_t scalar_t;
 
 #ifndef __CUDA_ARCH__
 
-extern "C" void drop_msm_context_vesta(msm_context_t<affine_t::mem_t> &ref) {
+extern "C" void drop_msm_context_vesta(msm_context_t<affine_t::mem_t> &ref)
+{
     CUDA_OK(cudaFree(ref.d_points));
 }
 
@@ -29,15 +30,15 @@ cuda_vesta_init(const affine_t points[], size_t npoints, msm_context_t<affine_t:
 }
 
 extern "C" RustError cuda_vesta(point_t *out, const affine_t points[], size_t npoints,
-                                          const scalar_t scalars[])
+                                const scalar_t scalars[])
 {
     return mult_pippenger<bucket_t>(out, points, npoints, scalars);
 }
 
 extern "C" RustError cuda_vesta_with(point_t *out, msm_context_t<affine_t::mem_t> *msm_context, size_t npoints,
-                                                       const scalar_t scalars[])
+                                     const scalar_t scalars[], uint32_t pidx[])
 {
-    return mult_pippenger_with<bucket_t, point_t, affine_t, scalar_t>(out, msm_context, npoints, scalars);
+    return mult_pippenger_with<bucket_t, point_t, affine_t, scalar_t>(out, msm_context, npoints, scalars, pidx);
 }
 
 #endif

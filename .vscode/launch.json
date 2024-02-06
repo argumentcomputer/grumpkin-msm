@@ -1,0 +1,140 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'grumpkin-msm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "grumpkin-msm",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'pasta_msm'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=pasta_msm",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "pasta_msm",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'pasta_msm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=pasta_msm",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "pasta_msm",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'grumpkin_msm'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=grumpkin_msm",
+                    "--package=grumpkin-msm",
+                    "--features=cuda"
+                ],
+                "filter": {
+                    "name": "grumpkin_msm",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'grumpkin_msm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=grumpkin_msm",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "grumpkin_msm",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'grumpkin_msm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=grumpkin_msm",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "grumpkin_msm",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'pasta_msm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=pasta_msm",
+                    "--package=grumpkin-msm"
+                ],
+                "filter": {
+                    "name": "pasta_msm",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
