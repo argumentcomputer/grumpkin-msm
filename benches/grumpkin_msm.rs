@@ -71,12 +71,24 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         let context = grumpkin_msm::bn256::init(&points);
 
+        let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),
             |b| {
                 b.iter(|| {
                     let _ =
-                        grumpkin_msm::bn256::with(&context, &scalars);
+                        grumpkin_msm::bn256::with(&context, &scalars, Some(indices.as_slice()));
+                })
+            },
+        );
+
+        scalars.reverse();
+        group.bench_function(
+            format!("preallocate 2**{} points rev", bench_npow),
+            |b| {
+                b.iter(|| {
+                    let _ =
+                        grumpkin_msm::bn256::with(&context, &scalars, None);
                 })
             },
         );

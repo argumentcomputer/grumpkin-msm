@@ -30,14 +30,14 @@ cuda_grumpkin_init(const affine_t points[], size_t npoints, msm_context_t<affine
 }
 
 extern "C" RustError cuda_grumpkin(point_t *out, const affine_t points[], size_t npoints,
-                                   const scalar_t scalars[])
+                                   const scalar_t scalars[], size_t nscalars)
 {
-    return mult_pippenger<bucket_t>(out, points, npoints, scalars);
+    return mult_pippenger<bucket_t>(out, points, npoints, scalars, nscalars);
 }
 
 extern "C" RustError cuda_grumpkin_with(point_t *out, msm_context_t<affine_t::mem_t> *msm_context, size_t npoints,
-                                        const scalar_t scalars[], uint32_t pidx[])
+                                        const scalar_t scalars[], size_t nscalars, uint32_t pidx[])
 {
-    return mult_pippenger_with<bucket_t, point_t, affine_t, scalar_t>(out, msm_context, npoints, scalars, pidx);
+    return mult_pippenger_with<bucket_t, point_t, affine_t, scalar_t>(out, msm_context, npoints, scalars, nscalars, pidx);
 }
 #endif
