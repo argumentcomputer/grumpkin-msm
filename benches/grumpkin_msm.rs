@@ -30,7 +30,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     group.bench_function(format!("2**{} points", bench_npow), |b| {
         b.iter(|| {
-            let _ = grumpkin_msm::bn256::msm(&points, &scalars);
+            let _ = grumpkin_msm::bn256::msm_aux(&points, &scalars, None);
         })
     });
 
@@ -40,7 +40,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         format!("\"preallocate\" 2**{} points", bench_npow),
         |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::bn256::with(&context, &scalars, None);
+                let _ = grumpkin_msm::bn256::with_context_aux(
+                    &context, &scalars, None,
+                );
             })
         },
     );
@@ -65,7 +67,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         group.bench_function(format!("2**{} points", bench_npow), |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::bn256::msm(&points, &scalars);
+                let _ = grumpkin_msm::bn256::msm_aux(&points, &scalars, None);
             })
         });
 
@@ -76,8 +78,11 @@ fn criterion_benchmark(c: &mut Criterion) {
             format!("preallocate 2**{} points", bench_npow),
             |b| {
                 b.iter(|| {
-                    let _ =
-                        grumpkin_msm::bn256::with(&context, &scalars, Some(indices.as_slice()));
+                    let _ = grumpkin_msm::bn256::with_context_aux(
+                        &context,
+                        &scalars,
+                        Some(indices.as_slice()),
+                    );
                 })
             },
         );
@@ -87,8 +92,9 @@ fn criterion_benchmark(c: &mut Criterion) {
             format!("preallocate 2**{} points rev", bench_npow),
             |b| {
                 b.iter(|| {
-                    let _ =
-                        grumpkin_msm::bn256::with(&context, &scalars, None);
+                    let _ = grumpkin_msm::bn256::with_context_aux(
+                        &context, &scalars, None,
+                    );
                 })
             },
         );

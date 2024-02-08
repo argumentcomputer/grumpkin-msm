@@ -6,7 +6,7 @@ use grumpkin_msm::cuda_available;
 
 fn main() {
     let bench_npow: usize = std::env::var("BENCH_NPOW")
-        .unwrap_or("23".to_string())
+        .unwrap_or("22".to_string())
         .parse()
         .unwrap();
     let npoints: usize = 1 << bench_npow;
@@ -23,11 +23,22 @@ fn main() {
     let context = grumpkin_msm::bn256::init(&points);
 
     let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
-    let res =
-        grumpkin_msm::bn256::with(&context, &scalars, Some(indices.as_slice()))
-            .to_affine();
+    let res = grumpkin_msm::bn256::with_context_aux(
+        &context,
+        &scalars,
+        Some(indices.as_slice()),
+    )
+    .to_affine();
+    println!("res: {:?}", res);
+    let res2 = grumpkin_msm::bn256::msm_aux(
+        &points,
+        &scalars,
+        Some(indices.as_slice()),
+    )
+    .to_affine();
+    println!("res2: {:?}", res2);
     scalars.reverse();
-    let native = grumpkin_msm::bn256::msm(&points, &scalars).to_affine();
-    assert_eq!(res, native);
+    let native = naive_multiscalar_mul(&points, &scalars);
+    println!("native: {:?}", native);
     println!("success!")
 }

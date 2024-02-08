@@ -30,9 +30,9 @@ cuda_bn254_init(const affine_t points[], size_t npoints, msm_context_t<affine_t:
 }
 
 extern "C" RustError cuda_bn254(point_t *out, const affine_t points[], size_t npoints,
-                                const scalar_t scalars[], size_t nscalars)
+                                const scalar_t scalars[], size_t nscalars, uint32_t pidx[])
 {
-    return mult_pippenger<bucket_t>(out, points, npoints, scalars, nscalars);
+    return mult_pippenger<bucket_t>(out, points, npoints, scalars, nscalars, pidx);
 }
 
 extern "C" RustError cuda_bn254_with(point_t *out, msm_context_t<affine_t::mem_t> *msm_context,

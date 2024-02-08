@@ -136,9 +136,18 @@ macro_rules! impl_pasta {
 
         }
 
-        pub fn msm(points: &[$affine], scalars: &[$scalar]) -> $point {
+        pub fn msm_aux(
+            points: &[$affine],
+            scalars: &[$scalar],
+            indices: Option<&[u32]>,
+        ) -> $point {
             let npoints = points.len();
-            assert!(npoints == scalars.len(), "length mismatch");
+            let nscalars = scalars.len();
+            if let Some(indices) = indices {
+                assert!(nscalars == indices.len(), "length mismatch");
+            } else {
+                assert!(npoints == nscalars, "length mismatch");
+            }
 
             #[cfg(feature = "cuda")]
             if npoints >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
@@ -148,18 +157,37 @@ macro_rules! impl_pasta {
                         points: *const $affine,
                         npoints: usize,
                         scalars: *const $scalar,
+                        nscalars: usize,
+                        indices: *const u32,
                         is_mont: bool,
                     ) -> cuda::Error;
 
                 }
+
+                let indices = if let Some(inner) = indices {
+                    inner.as_ptr()
+                } else {
+                    std::ptr::null()
+                };
+
                 let mut ret = $point::default();
                 let err = unsafe {
-                    $name(&mut ret, &points[0], npoints, &scalars[0], true)
+                    $name(
+                        &mut ret,
+                        &points[0],
+                        npoints,
+                        &scalars[0],
+                        nscalars,
+                        indices,
+                        true,
+                    )
                 };
                 assert!(err.code == 0, "{}", String::from(err));
 
                 return ret;
             }
+
+            assert!(indices.is_none(), "no cpu support for indexed MSMs");
             let mut ret = $point::default();
             unsafe {
                 $name_cpu(&mut ret, &points[0], npoints, &scalars[0], true)
@@ -198,33 +226,69 @@ macro_rules! impl_pasta {
             ret
         }
 
-        pub fn with(context: &MSMContext<'_>, scalars: &[$scalar]) -> $point {
+        pub fn msm(points: &[$affine], scalars: &[$scalar]) -> $point {
+            msm_aux(points, scalars, None)
+        }
+
+        /// An indexed MSM. We do not check if the indices are valid, i.e.
+        /// for i in 0..nscalars, 0 <= indices[i] < npoints
+        pub fn indexed_msm(
+            points: &[$affine],
+            scalars: &[$scalar],
+            indices: &[u32],
+        ) -> $point {
+            msm_aux(points, scalars, Some(indices))
+        }
+
+        pub fn with_context_aux(
+            context: &MSMContext<'_>,
+            scalars: &[$scalar],
+            indices: Option<&[u32]>,
+        ) -> $point {
             let npoints = context.npoints();
             let nscalars = scalars.len();
-            assert!(npoints >= nscalars, "not enough points");
+            if let Some(indices) = indices {
+                assert!(nscalars == indices.len(), "length mismatch");
+            } else {
+                assert!(npoints >= nscalars, "not enough points");
+            }
 
             let mut ret = $point::default();
 
             #[cfg(feature = "cuda")]
-            if nscalars >= 1 << 16
-                && unsafe { !CUDA_OFF && cuda_available() }
-            {
+            if nscalars >= 1 << 16 && unsafe { !CUDA_OFF && cuda_available() } {
                 extern "C" {
                     fn $name_with(
                         out: *mut $point,
                         context: &CudaMSMContext,
-                        npoints: usize,
                         scalars: *const $scalar,
+                        nscalars: usize,
+                        indices: *const u32,
                         is_mont: bool,
                     ) -> cuda::Error;
                 }
 
+                let indices = if let Some(inner) = indices {
+                    inner.as_ptr()
+                } else {
+                    std::ptr::null()
+                };
+
                 let err = unsafe {
-                    $name_with(&mut ret, context.cuda(), nscalars, &scalars[0], true)
+                    $name_with(
+                        &mut ret,
+                        context.cuda(),
+                        &scalars[0],
+                        nscalars,
+                        indices,
+                        true,
+                    )
                 };
                 assert!(err.code == 0, "{}", String::from(err));
                 return ret;
             }
+
+            assert!(indices.is_none(), "no cpu support for indexed MSMs");
 
             unsafe {
                 $name_cpu(
@@ -237,6 +301,23 @@ macro_rules! impl_pasta {
             };
 
             ret
+        }
+
+        pub fn with_context(
+            context: &MSMContext<'_>,
+            scalars: &[$scalar],
+        ) -> $point {
+            with_context_aux(context, scalars, None)
+        }
+
+        /// An indexed MSM. We do not check if the indices are valid, i.e.
+        /// for i in 0..nscalars, 0 <= indices[i] < npoints
+        pub fn indexed_with_context(
+            context: &MSMContext<'_>,
+            scalars: &[$scalar],
+            indices: &[u32],
+        ) -> $point {
+            with_context_aux(context, scalars, Some(indices))
         }
     };
 }
@@ -362,7 +443,7 @@ mod tests {
     };
 
     #[test]
-    fn it_works() {
+    fn test_simple() {
         #[cfg(not(debug_assertions))]
         const NPOINTS: usize = 128 * 1024;
         #[cfg(debug_assertions)]
@@ -374,11 +455,12 @@ mod tests {
         let naive = naive_multiscalar_mul(&points, &scalars);
         println!("{:?}", naive);
 
-        let ret = pallas::msm(&points, &scalars).to_affine();
+        let ret = pallas::msm_aux(&points, &scalars, None).to_affine();
         println!("{:?}", ret);
 
         let context = pallas::init(&points);
-        let ret_other = pallas::with(&context, &scalars).to_affine();
+        let ret_other =
+            pallas::with_context_aux(&context, &scalars, None).to_affine();
         println!("{:?}", ret_other);
 
         assert_eq!(ret, naive);

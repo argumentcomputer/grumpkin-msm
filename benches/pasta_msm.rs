@@ -30,7 +30,8 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     group.bench_function(format!("2**{} points", bench_npow), |b| {
         b.iter(|| {
-            let _ = grumpkin_msm::pasta::pallas::msm(&points, &scalars);
+            let _ =
+                grumpkin_msm::pasta::pallas::msm_aux(&points, &scalars, None);
         })
     });
 
@@ -40,7 +41,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         format!("\"preallocate\" 2**{} points", bench_npow),
         |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::pasta::pallas::with(&context, &scalars);
+                let _ = grumpkin_msm::pasta::pallas::with_context_aux(
+                    &context, &scalars, None,
+                );
             })
         },
     );
@@ -65,18 +68,35 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         group.bench_function(format!("2**{} points", bench_npow), |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::pasta::pallas::msm(&points, &scalars);
+                let _ = grumpkin_msm::pasta::pallas::msm_aux(
+                    &points, &scalars, None,
+                );
             })
         });
 
         let context = grumpkin_msm::pasta::pallas::init(&points);
 
+        let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),
             |b| {
                 b.iter(|| {
-                    let _ =
-                        grumpkin_msm::pasta::pallas::with(&context, &scalars);
+                    let _ = grumpkin_msm::pasta::pallas::with_context_aux(
+                        &context,
+                        &scalars,
+                        Some(indices.as_slice()),
+                    );
+                })
+            },
+        );
+
+        group.bench_function(
+            format!("preallocate 2**{} points rev", bench_npow),
+            |b| {
+                b.iter(|| {
+                    let _ = grumpkin_msm::pasta::pallas::with_context_aux(
+                        &context, &scalars, None,
+                    );
                 })
             },
         );

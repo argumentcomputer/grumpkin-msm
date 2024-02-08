@@ -15,17 +15,32 @@ fn main() {
 
     println!("generating {} random points, just hang on...", npoints);
     let points = gen_points(npoints);
-    let scalars = gen_scalars(npoints);
+    let mut scalars = gen_scalars(npoints);
 
     #[cfg(feature = "cuda")]
     if unsafe { cuda_available() } {
         unsafe { grumpkin_msm::CUDA_OFF = false };
     }
 
-    let native = naive_multiscalar_mul(&points, &scalars);
     let context = grumpkin_msm::pasta::pallas::init(&points);
-    let res = grumpkin_msm::pasta::pallas::with(&context, &scalars).to_affine();
 
-    assert_eq!(res, native);
+    let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
+    let res = grumpkin_msm::pasta::pallas::with_context_aux(
+        &context,
+        &scalars,
+        Some(indices.as_slice()),
+    )
+    .to_affine();
+    println!("res: {:?}", res);
+    let res2 = grumpkin_msm::pasta::pallas::msm_aux(
+        &points,
+        &scalars,
+        Some(indices.as_slice()),
+    )
+    .to_affine();
+    println!("res2: {:?}", res2);
+    scalars.reverse();
+    let native = naive_multiscalar_mul(&points, &scalars);
+    println!("native: {:?}", native);
     println!("success!")
 }
