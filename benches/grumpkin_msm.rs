@@ -65,15 +65,24 @@ fn criterion_benchmark(c: &mut Criterion) {
         let mut group = c.benchmark_group("GPU");
         group.sample_size(20);
 
+        let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
+
         group.bench_function(format!("2**{} points", bench_npow), |b| {
             b.iter(|| {
                 let _ = grumpkin_msm::bn256::msm_aux(&points, &scalars, None);
             })
         });
 
+        scalars.reverse();
+        group.bench_function(format!("2**{} points rev", bench_npow), |b| {
+            b.iter(|| {
+                let _ = grumpkin_msm::bn256::msm_aux(&points, &scalars, Some(indices.as_slice()));
+            })
+        });
+
         let context = grumpkin_msm::bn256::init(&points);
 
-        let indices = (0..(npoints as u32)).rev().collect::<Vec<_>>();
+        scalars.reverse();
         group.bench_function(
             format!("preallocate 2**{} points", bench_npow),
             |b| {
@@ -81,7 +90,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                     let _ = grumpkin_msm::bn256::with_context_aux(
                         &context,
                         &scalars,
-                        Some(indices.as_slice()),
+                        None,
                     );
                 })
             },
@@ -93,7 +102,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             |b| {
                 b.iter(|| {
                     let _ = grumpkin_msm::bn256::with_context_aux(
-                        &context, &scalars, None,
+                        &context, &scalars, Some(indices.as_slice()),
                     );
                 })
             },

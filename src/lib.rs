@@ -214,6 +214,10 @@ macro_rules! impl_msm {
 
         /// An indexed MSM. We do not check if the indices are valid, i.e.
         /// for i in 0..nscalars, 0 <= indices[i] < npoints
+        /// 
+        /// Also, this version carries a performance penalty that all the
+        /// points must be moved onto the GPU once instead of in batches.
+        /// If the points are to be reused, please use the [`MSMContext`] API
         pub fn indexed_msm(
             points: &[$affine],
             scalars: &[$scalar],

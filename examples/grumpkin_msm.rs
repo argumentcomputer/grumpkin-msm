@@ -6,7 +6,7 @@ use grumpkin_msm::cuda_available;
 
 fn main() {
     let bench_npow: usize = std::env::var("BENCH_NPOW")
-        .unwrap_or("22".to_string())
+        .unwrap_or("23".to_string())
         .parse()
         .unwrap();
     let npoints: usize = 1 << bench_npow;
