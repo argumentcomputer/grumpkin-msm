@@ -76,7 +76,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         scalars.reverse();
         group.bench_function(format!("2**{} points rev", bench_npow), |b| {
             b.iter(|| {
-                let _ = grumpkin_msm::bn256::msm_aux(&points, &scalars, Some(indices.as_slice()));
+                let _ = grumpkin_msm::bn256::msm_aux(
+                    &points,
+                    &scalars,
+                    Some(indices.as_slice()),
+                );
             })
         });
 
@@ -88,9 +92,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             |b| {
                 b.iter(|| {
                     let _ = grumpkin_msm::bn256::with_context_aux(
-                        &context,
-                        &scalars,
-                        None,
+                        &context, &scalars, None,
                     );
                 })
             },
@@ -102,7 +104,9 @@ fn criterion_benchmark(c: &mut Criterion) {
             |b| {
                 b.iter(|| {
                     let _ = grumpkin_msm::bn256::with_context_aux(
-                        &context, &scalars, Some(indices.as_slice()),
+                        &context,
+                        &scalars,
+                        Some(indices.as_slice()),
                     );
                 })
             },
