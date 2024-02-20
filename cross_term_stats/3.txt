@@ -1,0 +1,107 @@
+scalars length: 9722443
+freq>1000 (count, total, %):         30,    5745663,      59.10%
+freq>500  (count, total, %):         74,    5771642,      59.36%
+freq>100  (count, total, %):       9962,    7256672,      74.64%
+freq>20   (count, total, %):       9962,    7256672,      74.64%
+
+top 100 values:
+ 0,                                                                0, 5636922
+ 1,                                                                1, 16243
+ 2,                                1c48283c085dfd890cb2a668b3b1b1f76, 8165
+ 3,                                 c4f13d909120d99acf5a5cd0b1df687c, 7641
+ 4, 40000000000000000000000000000000224698fc0994a8dd8c46eb2100000000, 7119
+ 5,                                119e7b081367c8a9ead2e2fb09a03e86d, 6710
+ 6,                                 c4f13d909120d99acf5a5cd0b1df687b, 6019
+ 7,                                 aa9ad33f4f634df21dfc36daa1173709, 5860
+ 8,                                 54f672f0a55bb103ddd3d2dfe8247ff1, 5083
+ 9, 3fffffffffffffffffffffffffffffff5d555b6b7873cf42bcec8e504e209786, 4869
+10, 3ffffffffffffffffffffffffffffffe5dc4153b83b4d04cc11c8495c4e4e08b, 4121
+11, 3fffffffffffffffffffffffffffffff77abc5bcba315aeb6e4ab4465ee8c8f8, 3990
+12,                                1c48283c085dfd890cb2a668b3b1b1f75, 3656
+13,                                119e7b081367c8a9ead2e2fb09a03e86c, 3261
+14, 3fffffffffffffffffffffffffffffffcd50260b6438f7d9ae73184117db8010, 3223
+15, 3fffffffffffffffffffffffffffffff5d555b6b7873cf42bcec8e504e209785, 2596
+16,                                 ff91462ff4befef5fbd009ba893bb6fa, 2488
+17, 3fffffffffffffffffffffffffffffff085ee87ad3181e3edf18bb7065fc1794, 2307
+18, 3fffffffffffffffffffffffffffffff085ee87ad3181e3edf18bb7065fc1795, 1669
+19, 2224b23bb8ec0e44887d1644218803f004851644a147e35cc8905d5c2cbdd933, 1534
+20,                                 54f672f0a55bb103ddd3d2dfe8247ff2, 1472
+21,                                                                2, 1405
+22,                                16f8c10cfe084278ced5693ab52f69f85, 1345
+23, 3fffffffffffffffffffffffffffffff22b552cc14d5a9e79076e16676c44907, 1285
+24, 3ffffffffffffffffffffffffffffffece6ccd397425e4ce14f79fa15f6e003d, 1283
+25, 1e1878da698fc39c5c7a66f929750549f119203df03b4e2bc401df8d3e4df38c, 1280
+26,                                189e27b212241b3359eb4b9a163bed0f6, 1032
+27, 40000000000000000000000000000000224698fc0994a8dd8c46eb20ffffffff, 1029
+28, 3ffffffffffffffffffffffffffffffd77db4bfecc07711514560fb67ba323dd, 1029
+29,                                                                c, 1027
+30,                                2aa6b4cfd3d8d37c877f0db6a845cdc24, 902
+31,                                 ff91462ff4befef5fbd009ba893bb6fb, 825
+32, 3fffffffffffffffffffffffffffffff7859b31abedd46d5d09f45612fb7001f, 771
+33, 12e6f1c90542447b6767e7bb734508a20443f5e5cbe4868a75c9984043328e6c, 768
+34, 3cc29d03a5284b18ca568a0673e5c01241401aa45d7e91bae40b14061fd5c3c3, 768
+35, 40000000000000000000000000000000224698fc0994a8dd8c46eb20fffffffd, 650
+36, 3ffffffffffffffffffffffffffffffe5dc4153b83b4d04cc11c8495c4e4e08c, 647
+37,  38c44b1b97af85d18abc821a313f8efda2bc947d0059b892ff45f7bd38244c6, 646
+38,  6c9a7ae1452ad444e553e1b2f2e38ddbb32479f7c1bb2abd8303696b3ac8104, 645
+39, 3ffffffffffffffffffffffffffffffe98641ddae752f5a7ed92317f9c412f0b, 643
+40,                                7ff41e6f7b8a7a75967d2923f8d16946c, 642
+41,                                153d9cbc2956ec40f774f4b7fa091ffc4, 642
+42, 3fffffffffffffffffffffffffffffffcd50260b6438f7d9ae73184117db800f, 641
+43, 3ffffffffffffffffffffffffffffffecd10f27d6ace0cf9504e7d6bbdd191ef, 641
+44, 3ffffffffffffffffffffffffffffffd0e81a2b9c51142724edd77de38825e15, 641
+45,                                189e27b212241b3359eb4b9a163bed0f8, 640
+46, 2c4cc5f53190164c6816b0f6897a61c75039a83920ff5e34879d5dfc28904883, 640
+47,                                93b4ee2c6cd8a3341b83c59c85678e5c4, 639
+48, 2ce70d73dc1a84a3d84a7301652c680b226b8e8da51fa9e518d436578c5e3427, 639
+49,                                                                3, 639
+50, 3ffffffffffffffffffffffffffffffeb2ba882c291081509ef05775ad09607c, 520
+51, 40000000000000000000000000000000224698fc0994a8dd8c46eb20fffffff5, 517
+52,  64c112a9b7e6949c8824a9c517b4b59ce693f8c48e20c9cdca144d5471515f2, 516
+53,  de5b72428005519cf56155875f934c0dc27bc7444450cb8f5c0e276d8d3280c, 516
+54,                                3fb8d6347c04c4c2e65ede27ee1b5ff4c, 516
+55, 25bf903b113e3f7b02d5a6873908b00cd80a173092388bf1c891f99aad24510a, 515
+56, 3a4c61d5205fa657a48216fc05fbaf9acff61f5849635b0d1efae80305d25cd1, 515
+57,                                313c4f6424483666b3d697342c77da1ec, 515
+58, 3ffffffffffffffffffffffffffffffa22d52bc23f16eb5a7e68fd71562f10b0, 514
+59,                                54d878b41919f89b2617f33a1b1515e62, 514
+60,                                 fee358d1f013130b997b789fb86d7fd3, 514
+61, 1533674b056362eeec5899de2b7b339b17746d4d53f88f7f9af5c79beed26db8, 513
+62,                                15535a67e9ec69be43bf86db5422e6e12, 513
+63,                                24ed3b8b1b3628cd06e0f1672159e3971, 512
+64,                                d36dc460e8dd67f701e2a3c47382ee51c, 512
+65, 32b82e64d26680bad4c1c3a336f63b532bb226b56d5a6680935c262965194cf3, 512
+66,  441efa485d9d0f997c45e364bf1d41aca69c20483174a2212380e35f582987f, 512
+67,  7eb95afd7c9e3a9c11a5d8162716eef7615a1855684e906de037059961a28bc, 512
+68,  52585012a2be421fc36ae014c4ed032f22cb2b5336578f757bd3300dfd20119, 511
+69, 3ffffffffffffffffffffffffffffff6e6f7b6353c0a759bd40a9158a9871a3d, 509
+70, 10db87d2016e3b274a63cad93dbc22ceb7f5590a903cb046b751f94075135142, 508
+71, 3fffffffffffffffffffffffffffff915a93f7aa671a41c8e972b5bcf2553ad1, 508
+72,  64c112a9b7e6949c8824a9c517b4b5a7856256d93996ea49848ea95175e15d4, 508
+73,  8bb4a58f4a4e343f2e4dc0a85984d608b90bd0cf8b8b1fb88a62ba2fc259e5f, 508
+74,                                16f8c10cfe084278ced5693ab52f69f84, 421
+75,  b6bbf9fc27365ec95f6c7957ff958536ee31ed393cb3e3f8f3ad37ccd9ff506, 390
+76,  c54de926abcef5dae73635df519767daa1845b501156bf4c9990d63d9c292b0, 388
+77,                                93b4ee2c6cd8a3341b83c59c85678e5d0, 387
+78, 33ab216d954310a2518c9ca20ae68982782e5347087f3ce8c2adddbd263d6d51, 387
+79,                              fee358d1f013130b997b789fb86d7fd3000, 387
+80,  7028e3a842fd2193d2db336dd302cb2872e3a418212fb183b880a9744772d54, 387
+81, 2be958127346e660415962517fec5892bd2a947c99307956c0ea5fdc7154a142, 387
+82, 3db3e3ed7cfcefeb460b06c93847ef8aa77f170086241d5da3a2a4c8663f6337, 387
+83, 3ffffffffffffffffffffffffffffffc7bafa8a4eea40db3042cdb82066e80a6, 387
+84, 3ffffffffffffffffffffffffffffffc22a5a5802d40d530d85da2013974b5cb, 386
+85, 3fffffffffffffffffffffffffffff0198dc7cb0bbaad76b446d3ccfc0be4da1, 386
+86, 106366683a629f06be59c4a2da0d6f16ac183ea419fc255d022330b983ff6514, 386
+87, 3ffffffffffffffffffffffffffffffdee7737f99c9b93a031ea8bbfcbf82f29, 386
+88,                                                                4, 386
+89, 2022da9f430cdfa232d1d61c747ecfe7f94e631c94b04277635af38f2edd12f9, 386
+90, 3fffffffffffffffffffffffffffffa02b2fc55f61b8d0acae68102662f10af1, 386
+91, 3ffffffffffffffffffffffffffffffe23240c9c2016aaf194a6d7abed88920d, 386
+92,  284cd0199e349f8a9311bfdaad3bb85de0e8392cafba291b0ab89d7d78dedb4, 386
+93, 1d54fdcf236ba1fe96c25020d2bc4d771345417f35aa9bb9a069838abc7a4bdd, 385
+94, 3ffffffffffffffffffffffffffffffdee7737f99c9b93a031ea8bbfcbf82f27, 385
+95, 40000000000000000000000000000000224698fc0994a8dd8c46eb20ffffff71, 385
+96, 1fdf9fd3187cb6ca6ea712e2c2b18a00b178e20c35b25b73576f2d463e20892b, 385
+97, 1a1c1b39d11689db47df8dfb67275228a5f927070e52e21b6ac472b8d66df7a9, 385
+98, 1e8ea5811b2622aeebc9bce599e5bc5ba75eca65fa97a232d0a7ec4093b2eb49, 385
+99,                                233cf61026cf9153d5a5c5f613407d0da, 385
