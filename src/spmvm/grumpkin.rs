@@ -15,6 +15,20 @@ pub fn spmvm(
     X: &[bn256::Fr],
     nthreads: usize,
 ) -> Vec<bn256::Fr> {
+    let mut out = vec![bn256::Fr::ZERO; csr.num_rows];
+    spmvm_into(csr, W, u, X, &mut out, nthreads);
+    out
+}
+
+
+pub fn spmvm_into(
+    csr: &CudaSparseMatrix<'_, bn256::Fr>,
+    W: &[bn256::Fr],
+    u: &bn256::Fr,
+    X: &[bn256::Fr],
+    sink: &mut Vec<bn256::Fr>,
+    nthreads: usize,
+) {
     extern "C" {
         fn cuda_sparse_matrix_mul_bn254(
             csr: *const CudaSparseMatrix<'_, bn256::Fr>,
@@ -24,17 +38,14 @@ pub fn spmvm(
         ) -> sppark::Error;
     }
 
-    let mut out = vec![bn256::Fr::ZERO; csr.num_rows];
     let witness = CudaWitness::new(W, u, X);
     let err = unsafe {
         cuda_sparse_matrix_mul_bn254(
             csr as *const _,
             &witness as *const _,
-            out.as_mut_ptr(),
+            sink.as_mut_ptr(),
             nthreads,
         )
     };
     assert!(err.code == 0, "{}", String::from(err));
-
-    out
 }
