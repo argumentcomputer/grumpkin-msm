@@ -19,10 +19,10 @@ typedef fr_t scalar_t;
 
 #ifndef __CUDA_ARCH__
 extern "C" 
-RustError cuda_sparse_matrix_mul_bn254(spmvm_host_t<scalar_t> *csr, const scalar_t *scalars, 
+RustError cuda_sparse_matrix_mul_bn254(spmvm_host_t<scalar_t> *csr, const witness_t<scalar_t> *witness, 
                                         scalar_t *out, size_t nthreads)
 {
-    return sparse_matrix_mul<scalar_t>(csr, scalars, out, nthreads);
+    return sparse_matrix_mul<scalar_t>(csr, witness, out, nthreads);
 }
 
 extern "C"

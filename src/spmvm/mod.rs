@@ -63,25 +63,27 @@ impl<'a, F> CudaSparseMatrix<'a, F> {
     }
 }
 
-// impl<'a, F: PrimeField> From<&'a SparseMatrix<F>> for CudaSparseMatrix<'a, F> {
-//     fn from(value: &SparseMatrix<F>) -> Self {
-//         let mut n = block_size;
-//         let mut blocks = vec![0];
-//         loop {
-//             let i = match row_ptr.binary_search(&block_size) {
-//                 Ok(i) => i,
-//                 Err(i) => i,
-//             };
+#[repr(C)]
+pub struct CudaWitness<'a, F> {
+    pub W: *const F,
+    pub u: *const F,
+    pub U: *const F,
+    pub nW: usize,
+    pub nU: usize,
+    _p: PhantomData<&'a F>,
+}
 
-//             blocks.push(i - 1);
-//             n = row_ptr[i - 1] + block_size;
-//         }
-//         CudaSparseMatrix::new(
-//             &value.data,
-//             &value.indices,
-//             &value.indptr,
-//             value.indptr.len() - 1,
-//             value.cols,
-//         )
-//     }
-// }
+impl<'a, F> CudaWitness<'a, F> {
+    pub fn new(W: &[F], u: &F, U: &[F]) -> Self {
+        let nW = W.len();
+        let nU = U.len();
+        CudaWitness {
+            W: W.as_ptr(),
+            u: u as *const _,
+            U: U.as_ptr(),
+            nW,
+            nU,
+            _p: PhantomData,
+        }
+    }
+}

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 #![allow(unused_mut)]
+#![allow(non_snake_case)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use ff::PrimeField;
@@ -39,6 +40,11 @@ pub fn gen_sparse_matrix<F: PrimeField>(n: usize, m: usize) -> SparseMatrix<F> {
     }
 }
 
+fn into_witness<F>(scalars: &[F]) -> (&[F], &F, &[F]) {
+    let n = scalars.len();
+    (&scalars[0..n - 10], &scalars[n - 10], &scalars[n - 9..])
+}
+
 #[cfg(feature = "cuda")]
 use grumpkin_msm::cuda_available;
 use halo2curves::bn256;
@@ -54,6 +60,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     println!("generating sparse matrix with {} rows...", size);
     let csr = gen_sparse_matrix::<bn256::Fr>(size, size);
     let scalars = gen_scalars(size);
+    let (W, u, X) = into_witness(&scalars);
 
     let mut group = c.benchmark_group("GPU");
     group.sample_size(20);
@@ -75,7 +82,9 @@ fn criterion_benchmark(c: &mut Criterion) {
                     );
                     let _ = grumpkin_msm::spmvm::grumpkin::spmvm(
                         &blocked_cuda_csr,
-                        &scalars,
+                        W,
+                        u,
+                        X,
                         256,
                     );
                 })

@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::time::Instant;
 
 use ff::PrimeField;
@@ -39,6 +41,13 @@ pub fn gen_sparse_matrix<F: PrimeField>(n: usize, m: usize) -> SparseMatrix<F> {
     }
 }
 
+fn into_witness<F>(
+    scalars: &[F],
+) -> (&[F], &F, &[F]) {
+    let n = scalars.len();
+    (&scalars[0..n-10], &scalars[n-10], &scalars[n-9..])
+}
+
 /// cargo run --release --example grumpkin_spmvm
 
 fn main() {
@@ -76,6 +85,7 @@ fn main() {
         csr.len(),
     );
     let scalars = gen_scalars(size);
+    let (W, u, X) = into_witness(&scalars);
 
     #[cfg(feature = "cuda")]
     if unsafe { cuda_available() } {
@@ -83,12 +93,12 @@ fn main() {
     }
 
     let start = Instant::now();
-    let res = grumpkin_msm::spmvm::grumpkin::spmvm(&cuda_csr, &scalars, 256);
+    let res = grumpkin_msm::spmvm::grumpkin::spmvm(&cuda_csr, W, u, X, 256);
     let gpu = start.elapsed();
     println!("gpu: {:?}", gpu);
 
     let blocked_res =
-        grumpkin_msm::spmvm::grumpkin::spmvm(&blocked_cuda_csr, &scalars, 256);
+        grumpkin_msm::spmvm::grumpkin::spmvm(&blocked_cuda_csr, W, u, X, 256);
     let gpu_blocked = start.elapsed();
     println!("gpu blocked: {:?}", gpu_blocked - gpu);
 
