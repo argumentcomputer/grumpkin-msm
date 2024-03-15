@@ -15,8 +15,16 @@ typedef bucket_t::affine_t affine_t;
 typedef fr_t scalar_t;
 
 #include <msm/pippenger.cuh>
+#include <spmvm/spmvm.cuh>
 
 #ifndef __CUDA_ARCH__
+extern "C" 
+RustError cuda_sparse_matrix_mul_bn254(spmvm_host_t<scalar_t> *csr, const scalar_t *scalars, 
+                                        scalar_t *out, size_t nthreads)
+{
+    return sparse_matrix_mul<scalar_t>(csr, scalars, out, nthreads);
+}
+
 extern "C"
 RustError cuda_pippenger_bn254(point_t *out, const affine_t points[], size_t npoints,
                                               const scalar_t scalars[])

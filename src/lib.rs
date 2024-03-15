@@ -5,6 +5,7 @@
 #![allow(unused)]
 
 pub mod pasta;
+pub mod spmvm;
 pub mod utils;
 
 extern crate blst;

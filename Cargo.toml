@@ -33,12 +33,15 @@ cuda-mobile = []
 [dependencies]
 blst = "~0.3.11"
 semolina = "~0.1.3"
-sppark = "~0.1.2"
+sppark = { git = "https://github.com/lurk-lab/sppark", branch = "new-gpu-spmvm" }
 halo2curves = { version = "0.6.0" }
 pasta_curves = { version = "0.5.0", features = ["repr-c"] }
 rand = "^0"
 rand_chacha = "^0"
 rayon = "1.5"
+ff = { version = "0.13.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+bincode = "1.3"
 
 [build-dependencies]
 cc = "^1.0.70"
@@ -57,6 +60,10 @@ harness = false
 
 [[bench]]
 name = "pasta_msm"
+harness = false
+
+[[bench]]
+name = "grumpkin_spmvm"
 harness = false
 
 
